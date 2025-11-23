@@ -23,3 +23,8 @@ Develop a modern data warehouse using SQL to consolidate orders data, enabling a
 ### BI: Analytics & Reporting (Data Analytics)
 
 ### Objective
+
+Develop SQL-based analytics to deliver detailed insights into:
+- **Customer Behavior**
+- **Product Performance**
+- **Sales Trends**
