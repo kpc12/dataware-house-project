@@ -1,4 +1,4 @@
-Step 4: Data Cleaning Create Clean_Orders table
+-- Step 4: Data Cleaning Create Clean_Orders table
 
 CREATE TABLE CLEAN_ORDERS (
 ORDER_ID NUMBER,
@@ -8,3 +8,6 @@ TOTAL_AMOUNT NUMBER(10,2),
 STATUS VARCHAR2(20),
 LOADED_DATE TIMESTAMP DEFAULT SYSTIMESTAMP
 );
+
+-- Explaination:
+-- 1) Loads clean data into clean_orders table from stage_orders table.
