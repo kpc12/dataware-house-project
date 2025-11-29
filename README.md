@@ -30,5 +30,6 @@ Develop SQL-based analytics to deliver detailed insights into:
 - **Sales Trends**
 
 ### About Me
---
+
+Hi,there! I'm Kaustubh Chavan, I'm a Data Engineer.
 
