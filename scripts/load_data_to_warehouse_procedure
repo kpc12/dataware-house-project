@@ -1,0 +1,103 @@
+Step 8: Load Procedure (Put Data in Warehouse)
+CREATE OR REPLACE PROCEDURE LOAD_CUSTOMERS AS
+    v_count_new NUMBER := 0;
+    v_count_updated NUMBER := 0;
+BEGIN
+    -- Process each staged customer
+    FOR rec IN (SELECT * FROM STAGE_CUSTOMERS) LOOP
+        
+        -- Check if customer already exists
+        BEGIN
+            -- Try to find existing customer
+            DECLARE
+                v_exists NUMBER;
+            BEGIN
+                SELECT 1 INTO v_exists
+                FROM DW_CUSTOMERS
+                WHERE CUSTOMER_ID = rec.CUSTOMER_ID
+                AND IS_CURRENT = 'Y';
+                
+                -- Customer exists - create new version (history tracking)
+                
+                -- Mark old version as not current
+                UPDATE DW_CUSTOMERS
+                SET IS_CURRENT = 'N',
+                    VALID_TO = SYSDATE
+                WHERE CUSTOMER_ID = rec.CUSTOMER_ID
+                AND IS_CURRENT = 'Y';
+                
+                -- Insert new version
+                INSERT INTO DW_CUSTOMERS (
+                    DW_CUSTOMER_ID, CUSTOMER_ID, FIRST_NAME, LAST_NAME, 
+                    EMAIL, CREATED_DATE, VALID_FROM, VALID_TO, IS_CURRENT
+                ) VALUES (
+                    DW_CUSTOMER_SEQ.NEXTVAL, rec.CUSTOMER_ID, rec.FIRST_NAME,
+                    rec.LAST_NAME, rec.EMAIL, rec.CREATED_DATE,
+                    SYSDATE, DATE '9999-12-31', 'Y'
+                );
+                
+                v_count_updated := v_count_updated + 1;
+                
+            EXCEPTION
+                WHEN NO_DATA_FOUND THEN
+                    -- Customer doesn't exist - insert first time
+                    INSERT INTO DW_CUSTOMERS (
+                        DW_CUSTOMER_ID, CUSTOMER_ID, FIRST_NAME, LAST_NAME, 
+                        EMAIL, CREATED_DATE, VALID_FROM, VALID_TO, IS_CURRENT
+                    ) VALUES (
+                        DW_CUSTOMER_SEQ.NEXTVAL, rec.CUSTOMER_ID, rec.FIRST_NAME,
+                        rec.LAST_NAME, rec.EMAIL, rec.CREATED_DATE,
+                        SYSDATE, DATE '9999-12-31', 'Y'
+                    );
+                    
+                    v_count_new := v_count_new + 1;
+            END;
+        END;
+    END LOOP;
+    
+    -- Clear staging table
+    DELETE FROM STAGE_CUSTOMERS;
+    COMMIT;
+    
+    DBMS_OUTPUT.PUT_LINE('Loaded ' || v_count_new || ' new customers');
+    DBMS_OUTPUT.PUT_LINE('Updated ' || v_count_updated || ' existing customers');
+END;
+/
+-- Load orders into warehouse
+CREATE OR REPLACE PROCEDURE LOAD_ORDERS AS
+    v_count_new NUMBER := 0;
+    v_count_updated NUMBER := 0;
+BEGIN FOR rec IN (SELECT * FROM CLEAN_ORDERS) LOOP
+        BEGIN
+            -- Try to find existing order
+            DECLARE
+                v_dw_order_id NUMBER;
+            BEGIN SELECT DW_ORDER_ID INTO v_dw_order_id
+                FROM DW_ORDERS WHERE ORDER_ID = rec.ORDER_ID;
+                -- Order exists - update it
+                UPDATE DW_ORDERS SET TOTAL_AMOUNT = rec.TOTAL_AMOUNT,
+                    STATUS = rec.STATUS, UPDATED_DATE = SYSTIMESTAMP
+                WHERE ORDER_ID = rec.ORDER_ID;
+                v_count_updated := v_count_updated + 1;
+            EXCEPTION WHEN NO_DATA_FOUND THEN
+                    -- Order doesn't exist - insert it
+                    INSERT INTO DW_ORDERS (DW_ORDER_ID, ORDER_ID, CUSTOMER_ID, ORDER_DATE, TOTAL_AMOUNT, STATUS
+                    ) VALUES ( DW_ORDER_SEQ.NEXTVAL, rec.ORDER_ID, rec.CUSTOMER_ID,
+                        rec.ORDER_DATE, rec.TOTAL_AMOUNT, rec.STATUS);
+                    v_count_new := v_count_new + 1; END;
+        END; END LOOP;
+
+    DELETE FROM STAGE_ORDERS;
+    COMMIT;
+    DELETE FROM  CLEAN_ORDERS;
+     COMMIT;
+    DBMS_OUTPUT.PUT_LINE('Loaded ' || v_count_new || ' new orders');
+    DBMS_OUTPUT.PUT_LINE('Updated ' || v_count_updated || ' existing orders');
+END;
+/
+
+Explanation:
+    • Checks if record exists in warehouse 
+    • If exists: Update it (or create new version for history) 
+    • If new: Insert it 
+    • Then clears staging table
