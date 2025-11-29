@@ -1,4 +1,4 @@
-Step 1: Create Source Tables (Where Real Data Lives)
+-- Step 1: Create Source Tables (Where Real Data Lives)
 -- Customer table
 CREATE TABLE CUSTOMERS (
     CUSTOMER_ID NUMBER PRIMARY KEY,
