@@ -1,0 +1,58 @@
+Step 6: Extract Procedure (Get Changed Data)
+
+-- STEP 1: Extract customers that changed
+CREATE OR REPLACE PROCEDURE EXTRACT_CUSTOMERS AS
+    v_last_run_time TIMESTAMP;
+    v_count NUMBER;
+BEGIN
+    -- Get the last time we ran
+    SELECT LAST_RUN_TIME INTO v_last_run_time
+    FROM ETL_CONTROL
+    WHERE TABLE_NAME = 'CUSTOMERS';
+    
+    -- Find customers that changed since last run
+    INSERT INTO STAGE_CUSTOMERS (
+        CUSTOMER_ID, FIRST_NAME, LAST_NAME, EMAIL, CREATED_DATE
+    )
+    SELECT 
+        CUSTOMER_ID, FIRST_NAME, LAST_NAME, EMAIL, CREATED_DATE
+    FROM CUSTOMERS
+    WHERE LAST_MODIFIED > v_last_run_time;
+    v_count := SQL%ROWCOUNT;
+
+
+   -- Update control table
+    UPDATE ETL_CONTROL
+    SET LAST_RUN_TIME = SYSTIMESTAMP
+    WHERE TABLE_NAME = 'CUSTOMERS';
+    COMMIT;
+    DBMS_OUTPUT.PUT_LINE('Extracted ' || v_count || ' customers');
+END;
+/
+-- STEP 2: Extract orders that changed
+CREATE OR REPLACE PROCEDURE EXTRACT_ORDERS AS
+    v_last_run_time TIMESTAMP;
+    v_count NUMBER;
+BEGIN
+    SELECT LAST_RUN_TIME INTO v_last_run_time
+    FROM ETL_CONTROL
+    WHERE TABLE_NAME = 'ORDERS';
+    INSERT INTO STAGE_ORDERS (
+        ORDER_ID, CUSTOMER_ID, ORDER_DATE, TOTAL_AMOUNT, STATUS )
+    SELECT 
+        ORDER_ID, CUSTOMER_ID, ORDER_DATE, TOTAL_AMOUNT, STATUS
+    FROM ORDERS
+    WHERE LAST_MODIFIED > v_last_run_time;
+    v_count := SQL%ROWCOUNT;
+    UPDATE ETL_CONTROL
+    SET LAST_RUN_TIME = SYSTIMESTAMP
+    WHERE TABLE_NAME = 'ORDERS';
+    COMMIT;
+    DBMS_OUTPUT.PUT_LINE('Extracted ' || v_count || ' orders');
+END;
+/
+
+Explanation:
+    • Compares LAST_MODIFIED with LAST_RUN_TIME 
+    • Only copies records that are newer 
+    • This is CDC in action!
