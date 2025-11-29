@@ -1,1 +1,34 @@
+Step 5: Create Data Warehouse Tables (Final Destination)
 
+-- Data Warehouse Customer Table
+CREATE TABLE DW_CUSTOMERS (
+    DW_CUSTOMER_ID NUMBER PRIMARY KEY,
+    CUSTOMER_ID NUMBER,
+    FIRST_NAME VARCHAR2(50),
+    LAST_NAME VARCHAR2(50),
+    EMAIL VARCHAR2(100),
+    CREATED_DATE DATE,
+    -- Extra columns for tracking
+    VALID_FROM DATE,    -- When this version started
+    VALID_TO DATE,             -- When this version ended
+    IS_CURRENT VARCHAR2(1),    -- Y = current version, N = old version
+    LOADED_DATE TIMESTAMP DEFAULT SYSTIMESTAMP
+);
+CREATE SEQUENCE DW_CUSTOMER_SEQ START WITH 1;
+-- Data Warehouse Orders Table
+CREATE TABLE DW_ORDERS (
+    DW_ORDER_ID NUMBER PRIMARY KEY,
+    ORDER_ID NUMBER,
+    CUSTOMER_ID NUMBER,
+    ORDER_DATE DATE,
+    TOTAL_AMOUNT NUMBER(10,2),
+    STATUS VARCHAR2(20),
+    LOADED_DATE TIMESTAMP DEFAULT SYSTIMESTAMP,
+    UPDATED_DATE TIMESTAMP
+);
+CREATE SEQUENCE DW_ORDER_SEQ START WITH 1;
+
+Explanation:
+    • DW_ prefix = Data Warehouse tables 
+    • VALID_FROM and VALID_TO = Track history of changes 
+    • IS_CURRENT = Easy way to find latest version
