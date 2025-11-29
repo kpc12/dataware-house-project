@@ -1,1 +1,17 @@
+Step 2: Create a Control Table (Tracks What We've Already Copied)
+
+-- This table remembers when we last copied data
+CREATE TABLE ETL_CONTROL (
+    TABLE_NAME VARCHAR2(50) PRIMARY KEY,
+    LAST_RUN_TIME TIMESTAMP
+);
+
+-- Initialize for our tables
+INSERT INTO ETL_CONTROL VALUES ('CUSTOMERS', TIMESTAMP '2020-01-01 00:00:00');
+INSERT INTO ETL_CONTROL VALUES ('ORDERS', TIMESTAMP '2020-01-01 00:00:00');
+COMMIT;
+
+Explanation:
+    • This table keeps track of when we last ran ETL 
+    • Next time, we only copy data newer than this timestamp
 
