@@ -1,0 +1,26 @@
+Step 3: Create Staging Tables (Temporary Storage)
+
+-- Staging area for customer changes
+CREATE TABLE STAGE_CUSTOMERS (
+    CUSTOMER_ID NUMBER,
+    FIRST_NAME VARCHAR2(50),
+    LAST_NAME VARCHAR2(50),
+    EMAIL VARCHAR2(100),
+    CREATED_DATE DATE,
+    LOADED_DATE TIMESTAMP DEFAULT SYSTIMESTAMP
+);
+
+-- Staging area for order changes
+CREATE TABLE STAGE_ORDERS (
+    ORDER_ID NUMBER,
+    CUSTOMER_ID NUMBER,
+    ORDER_DATE DATE,
+    TOTAL_AMOUNT NUMBER(10,2),
+    STATUS VARCHAR2(20),
+    LOADED_DATE TIMESTAMP DEFAULT SYSTIMESTAMP
+);
+Explanation:
+    • Staging tables are like a waiting room 
+    • We put new data here first, then move it to the warehouse 
+    • This keeps the warehouse stable while we're loading
+
